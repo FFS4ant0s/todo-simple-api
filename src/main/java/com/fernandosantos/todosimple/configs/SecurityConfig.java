@@ -20,49 +20,45 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_MARTCHERS = { "/" };
+        private static final String[] PUBLIC_MATCHERS = { "/", "/public/**" }; // Rota pública
+        private static final String[] PUBLIC_MATCHERS_POST = { "/user", "/login" }; // Rotas públicas para POST
 
-    private static final String[] PUBLIC_MARTCHERS_POST = { "/user", "/login" };
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Configura CORS
+                                .csrf(csrf -> csrf.disable()) // Desativa CSRF
+                                .authorizeHttpRequests(authorize -> authorize
+                                                .requestMatchers(HttpMethod.POST, PUBLIC_MATCHERS_POST).permitAll() // Permite
+                                                                                                                    // POST
+                                                                                                                    // nas
+                                                                                                                    // rotas
+                                                                                                                    // públicas
+                                                .requestMatchers(PUBLIC_MATCHERS).permitAll() // Permite acesso a rotas
+                                                                                              // públicas
+                                                .anyRequest().authenticated() // Exige autenticação para todas as outras
+                                                                              // rotas
+                                )
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Define a
+                                                                                                        // política de
+                                                                                                        // sessão
+                                );
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(cors -> cors.disable()) // Desativa CORS
-                .csrf(csrf -> csrf.disable()) // Desativa CSRF
-                .authorizeHttpRequests(authorize -> authorize // Usando authorizeHttpRequests
-                        .requestMatchers("/public/**").permitAll() // Permite acesso a rotas públicas
-                        .anyRequest().authenticated() // Exige autenticação para todas as outras rotas
-                );
+                return http.build();
+        }
 
-        http
-                .authorizeHttpRequests(authorize -> authorize
-                        .anyRequest().authenticated() // Autenticação para todas as requisições
-                )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Definindo a política de sessão
-                )
-                .csrf(csrf -> csrf.disable());
+        @Bean
+        CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration configuration = new CorsConfiguration().applyPermitDefaultValues();
+                configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE"));
+                final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
 
-        http
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, PUBLIC_MARTCHERS_POST).permitAll()
-                        .requestMatchers(PUBLIC_MARTCHERS).permitAll()
-                        .anyRequest().authenticated());
-
-        return http.build();
-    }
-
-    @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration().applyPermitDefaultValues();
-        configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE"));
-        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-
-    @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public BCryptPasswordEncoder bCryptPasswordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 }
