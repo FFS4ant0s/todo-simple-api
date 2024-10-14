@@ -50,7 +50,7 @@ public class UserController {
     @Validated(UpdateUser.class)
     public ResponseEntity<Void> update(@Valid @RequestBody User obj, @PathVariable Long id) {
         obj.setId(id);
-        this.userService.Update(obj);
+        this.userService.update(obj); // Alterado para update (minúsculo)
         return ResponseEntity.noContent().build();
     }
 
@@ -58,7 +58,5 @@ public class UserController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         this.userService.delete(id);
         return ResponseEntity.noContent().build();
-
     }
-
 }

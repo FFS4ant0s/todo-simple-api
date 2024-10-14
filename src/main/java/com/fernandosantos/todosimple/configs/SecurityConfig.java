@@ -1,7 +1,5 @@
 package com.fernandosantos.todosimple.configs;
 
-import java.util.Arrays;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,57 +17,62 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.fernandosantos.todosimple.repositories.UserRepository;
+import com.fernandosantos.todosimple.Security.JWTAuthenticationFilter;
 import com.fernandosantos.todosimple.Security.JWTUtil;
+import com.fernandosantos.todosimple.models.User;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-        private AuthenticationManager authenticationManager;
-
         @Autowired
         private UserDetailsService userDetailsService;
 
         @Autowired
+        private UserRepository userRepository; // Injetando o UserRepository
+
+        @Autowired
         private JWTUtil jwtUtil;
 
-        private static final String[] PUBLIC_MATCHERS = { "/", "/public/**" }; // Rota pública
-        private static final String[] PUBLIC_MATCHERS_POST = { "/user", "/login" }; // Rotas públicas para POST
+        private static final String[] PUBLIC_MATCHERS = { "/" };
+        private static final String[] PUBLIC_MATCHERS_POST = { "/user", "/login" };
 
         @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-                http
-                                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Configura CORS
-                                .csrf(csrf -> csrf.disable()) // Desativa CSRF
-                                .authorizeHttpRequests(authorize -> authorize
-                                                .requestMatchers(HttpMethod.POST, PUBLIC_MATCHERS_POST).permitAll() // Permite
-                                                                                                                    // POST
-                                                                                                                    // nas
-                                                                                                                    // rotas
-                                                                                                                    // públicas
-                                                .requestMatchers(PUBLIC_MATCHERS).permitAll() // Permite acesso a rotas
-                                                                                              // públicas
-                                                .anyRequest().authenticated() // Exige autenticação para todas as outras
-                                                                              // rotas
-                                )
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Define a
-                                                                                                        // política de
-                                                                                                        // sessão
-                                );
-
+        public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
                 AuthenticationManagerBuilder authenticationManagerBuilder = http
                                 .getSharedObject(AuthenticationManagerBuilder.class);
                 authenticationManagerBuilder.userDetailsService(this.userDetailsService)
                                 .passwordEncoder(bCryptPasswordEncoder());
-                this.authenticationManager = authenticationManagerBuilder.build();
+                return authenticationManagerBuilder.build();
+        }
+
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http.csrf(csrf -> csrf.disable())
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .authorizeHttpRequests(authz -> authz
+                                                .requestMatchers(HttpMethod.POST, PUBLIC_MATCHERS_POST).permitAll()
+                                                .requestMatchers(PUBLIC_MATCHERS).permitAll()
+                                                .anyRequest().authenticated())
+                                .authenticationManager(authenticationManager(http))
+                                .addFilter(new JWTAuthenticationFilter(authenticationManager(http), jwtUtil))
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
                 return http.build();
         }
 
         @Bean
-        CorsConfigurationSource corsConfigurationSource() {
+        public BCryptPasswordEncoder bCryptPasswordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
+
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration().applyPermitDefaultValues();
                 configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE"));
                 final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -77,8 +80,9 @@ public class SecurityConfig {
                 return source;
         }
 
-        @Bean
-        public BCryptPasswordEncoder bCryptPasswordEncoder() {
-                return new BCryptPasswordEncoder();
+        public User createUser(User user) {
+                // Codifique a senha antes de salvar
+                user.setPassword(bCryptPasswordEncoder().encode(user.getPassword()));
+                return userRepository.save(user);
         }
 }

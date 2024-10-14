@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Getter
 public class UserSpringSecurity implements UserDetails {
-
     private Long id;
     private String username;
     private String password;
@@ -26,7 +25,22 @@ public class UserSpringSecurity implements UserDetails {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.authorities = profileEnums.stream().map(x -> new SimpleGrantedAuthority(x.getDescription()))
+
+        // Verifique se profileEnums não é nulo
+        if (profileEnums == null) {
+            profileEnums = Set.of(); // ou crie um novo conjunto vazio
+        }
+
+        // Mapeando corretamente as autoridades
+        this.authorities = profileEnums.stream()
+                .map(profileEnum -> {
+                    // Aqui é onde você pode verificar o tipo de profileEnum
+                    if (profileEnum instanceof ProfileEnum) {
+                        return new SimpleGrantedAuthority(profileEnum.getDescription());
+                    } else {
+                        throw new IllegalArgumentException("Tipo inesperado: " + profileEnum.getClass());
+                    }
+                })
                 .collect(Collectors.toList());
     }
 
@@ -51,7 +65,6 @@ public class UserSpringSecurity implements UserDetails {
     }
 
     public boolean hasRole(ProfileEnum profileEnum) {
-        return getAuthorities().contains(new SimpleGrantedAuthority(profileEnum.getDescription()));
+        return authorities.contains(new SimpleGrantedAuthority(profileEnum.getDescription()));
     }
-
 }

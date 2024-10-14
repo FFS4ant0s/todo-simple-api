@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -70,14 +69,15 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @CollectionTable(name = "user_profile")
     @Column(name = "profile", nullable = false)
-    private Set<Integer> profiles = new HashSet<>();
+    private Set<ProfileEnum> profiles = new HashSet<>();
 
+    // Método para obter os perfis
     public Set<ProfileEnum> getProfiles() {
-        return this.profiles.stream().map(x -> ProfileEnum.toEnum(x)).collect(Collectors.toSet());
+        return new HashSet<>(this.profiles);
     }
 
+    // Método para adicionar um perfil
     public void addProfile(ProfileEnum profileEnum) {
-        this.profiles.add(profileEnum.getCode());
+        this.profiles.add(profileEnum);
     }
-
 }
