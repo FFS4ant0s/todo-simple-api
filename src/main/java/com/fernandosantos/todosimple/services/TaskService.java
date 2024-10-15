@@ -9,23 +9,27 @@ import com.fernandosantos.todosimple.Security.UserSpringSecurity;
 import com.fernandosantos.todosimple.models.Task;
 import com.fernandosantos.todosimple.models.User;
 import com.fernandosantos.todosimple.models.enums.ProfileEnum;
+import com.fernandosantos.todosimple.models.projection.TaskProjection;
 import com.fernandosantos.todosimple.repositories.TaskRepository;
 import com.fernandosantos.todosimple.services.exceptions.AuthorizationException;
+import com.fernandosantos.todosimple.services.exceptions.DataBindingViolationException;
+import com.fernandosantos.todosimple.services.exceptions.ObjectNotFoundException;
 
 import jakarta.transaction.Transactional;
 import java.util.Objects;
 
 @Service
 public class TaskService {
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private TaskRepository taskRepository;
 
+    @Autowired
+    private UserService userService;
+
     public Task findById(Long id) {
-        Task task = this.taskRepository.findById(id).orElseThrow(() -> new RuntimeException(
-                "Tarefa não encontrada! Id: " + id + ", Tipo: " + User.class.getName()));
+        Task task = this.taskRepository.findById(id).orElseThrow(() -> new ObjectNotFoundException(
+                "Tarefa não encontrada! Id: " + id + ", Tipo: " + Task.class.getName()));
 
         UserSpringSecurity userSpringSecurity = UserService.authenticated();
         if (Objects.isNull(userSpringSecurity)
@@ -35,12 +39,12 @@ public class TaskService {
         return task;
     }
 
-    public List<Task> findAllByUser() {
+    public List<TaskProjection> findAllByUser() {
         UserSpringSecurity userSpringSecurity = UserService.authenticated();
         if (Objects.isNull(userSpringSecurity))
             throw new AuthorizationException("Acesso negado!");
 
-        List<Task> tasks = this.taskRepository.findByUser_Id(userSpringSecurity.getId());
+        List<TaskProjection> tasks = this.taskRepository.findByUser_Id(userSpringSecurity.getId());
         return tasks;
     }
 
@@ -69,11 +73,12 @@ public class TaskService {
         try {
             this.taskRepository.deleteById(id);
         } catch (Exception e) {
-            throw new RuntimeException("Não é possível excluir pois há entidades relacionadas.");
+            throw new DataBindingViolationException("Não é possível excluir pois há entidades relacionadas!");
         }
     }
 
     private Boolean userHasTask(UserSpringSecurity userSpringSecurity, Task task) {
         return task.getUser().getId().equals(userSpringSecurity.getId());
     }
+
 }

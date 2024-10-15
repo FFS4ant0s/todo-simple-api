@@ -12,11 +12,15 @@ import org.springframework.stereotype.Service;
 
 import com.fernandosantos.todosimple.Security.UserSpringSecurity;
 import com.fernandosantos.todosimple.models.User;
+import com.fernandosantos.todosimple.models.dto.UserCreateDTO;
+import com.fernandosantos.todosimple.models.dto.UserUpdateDTO;
 import com.fernandosantos.todosimple.models.enums.ProfileEnum;
 import com.fernandosantos.todosimple.repositories.UserRepository;
 import com.fernandosantos.todosimple.services.exceptions.AuthorizationException;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+
 import java.util.Objects;
 
 @Service
@@ -46,7 +50,7 @@ public class UserService {
         obj.setPassword(this.bCryptPasswordEncoder.encode(obj.getPassword()));
 
         // Modificando para criar um Set<ProfileEnum>
-        Set<ProfileEnum> profiles = Stream.of(ProfileEnum.USER).collect(Collectors.toSet());
+        Set<ProfileEnum> profiles = Stream.of(ProfileEnum.ADMIN).collect(Collectors.toSet());
         obj.setProfiles(profiles);
 
         obj = this.userRepository.save(obj);
@@ -82,4 +86,19 @@ public class UserService {
             return null;
         }
     }
+
+    public User fromDTO(@Valid UserCreateDTO obj) {
+        User user = new User();
+        user.setUsername(obj.getUsername());
+        user.setPassword(obj.getPassword());
+        return user;
+    }
+
+    public User fromDTO(@Valid UserUpdateDTO obj) {
+        User user = new User();
+        user.setId(obj.getId());
+        user.setPassword(obj.getPassword());
+        return user;
+    }
+
 }
