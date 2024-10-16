@@ -58,6 +58,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(authz -> authz
                                                 .requestMatchers(HttpMethod.POST, PUBLIC_MATCHERS_POST).permitAll()
                                                 .requestMatchers(PUBLIC_MATCHERS).permitAll()
+                                                .requestMatchers("/view/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .authenticationManager(authenticationManager(http))
                                 .addFilter(new JWTAuthenticationFilter(authenticationManager(http), jwtUtil))
