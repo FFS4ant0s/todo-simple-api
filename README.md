@@ -1,7 +1,7 @@
                                             API RESTful com Spring Boot
 
-API Restful utilizando o framework Spring Boot da linguagem Java. Além disso, é apresentado como criar uma simples interface web em HTML, CSS e JavaScript (também com a biblioteca Booststrap) que consume esta API.
-Esta é uma simples aplicação onde usuário podem se cadastrar e registrarem tarefas para sua conta.
+API Restful utilizando o framework Spring Boot da linguagem Java. Além disso, é apresentado como criar uma interface web em HTML, CSS e JavaScript (também com a biblioteca Booststrap) que consume esta API.
+Esta é uma aplicação onde usuário podem se cadastrar e registrarem tarefas para sua conta.
 
 🚀 Tecnologias
 Frontend:
